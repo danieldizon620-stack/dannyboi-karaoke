@@ -13,8 +13,8 @@
 <h3>Queue (<span id="count">0</span>)</h3><ol id="queue"></ol><input id="video" placeholder="YouTube video URL or 11-character ID"><input id="songTitle" placeholder="Song title"><button onclick="addManual()">Add to queue</button><button onclick="clearQueue()">Clear queue</button>
 <p><small>HTTPS improves client-origin identification but does not guarantee YouTube playback. TV ID depends on PeerJS signaling and WebRTC support. Never publish an unrestricted API key.</small></p></aside></main>
 <script>
-var queue=[],active=null,player=null,peer=null,connections=[],pin='',apiKey='';
-try{queue=JSON.parse(localStorage.getItem('dk_queue')||'[]');apiKey=localStorage.getItem('dk_api_key')||''}catch(e){}
+var queue=[],active=null,player=null,peer=null,connections=[],pin='',apiKey='AIzaSyDWBXrmebCs6TMViQOVdvm14KE1zcgTFKA';
+try{queue=JSON.parse(localStorage.getItem('dk_queue')||'[]');apiKey=localStorage.getItem('dk_api_key')||apiKey}catch(e){}
 function el(id){return document.getElementById(id)}
 function status(t){el('status').textContent=t;notify()}
 function save(){try{localStorage.setItem('dk_queue',JSON.stringify(queue))}catch(e){}render();notify()}
