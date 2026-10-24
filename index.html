@@ -8,7 +8,7 @@
 <button id="exit" onclick="document.body.className=''">Exit full screen</button>
 <main><section><div class="screen"><div id="player"></div><div id="error"><b>Playback error</b><p id="errorText"></p></div><div id="score">🎰<strong id="scoreNumber">88</strong></div></div>
 <div class="controls"><button onclick="playNext()">Play next</button> <button onclick="skip()">Skip</button> <button onclick="document.body.className='cinema'">Maximize player</button></div></section>
-<aside><h3>Android remote pairing</h3><p>TV ID: <strong id="pairId">Connecting…</strong></p><p>PIN: <strong id="pin">------</strong></p><small id="pairStatus">Starting PeerJS…</small><p><button onclick="startPairing()">Retry pairing / new PIN</button></p>
+<aside><h3>Android remote pairing</h3><p>TV ID: <strong id="pairId">Connecting…</strong></p><p>PIN: <strong id="pin">------</strong></p><small id="pairStatus">Starting PeerJS…</small><p><button onclick="retryPairing()">Retry pairing / new PIN</button></p>
 <h3>Search YouTube</h3><input id="apiKey" type="password" placeholder="YouTube Data API key"><button onclick="saveKey()">Save search key on this TV</button><input id="query" placeholder="Song or artist"><button onclick="searchSongs()">Search</button><div id="results"></div>
 <h3>Queue (<span id="count">0</span>)</h3><ol id="queue"></ol><input id="video" placeholder="YouTube video URL or 11-character ID"><input id="songTitle" placeholder="Song title"><button onclick="addManual()">Add to queue</button><button onclick="clearQueue()">Clear queue</button>
 <p><small>HTTPS improves client-origin identification but does not guarantee YouTube playback. TV ID depends on PeerJS signaling and WebRTC support. Never publish an unrestricted API key.</small></p></aside></main>
@@ -36,19 +36,30 @@ window.addEventListener('error',function(e){if(e.target&&e.target.tagName==='SCR
 render();el('apiKey').value=apiKey;
 </script>
 <script>
-(function(){
-var urls=['peerjs.compat.js','https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js'];
-var i=0;
-function tryNext(){
- if(typeof Peer==='function'){startPairing();return}
- if(i>=urls.length){document.getElementById('pairId').textContent='Unavailable';document.getElementById('pairStatus').textContent='PeerJS unavailable: local file and both CDN sources failed or are incompatible';return}
- var url=urls[i++],s=document.createElement('script');s.src=url;
- s.onload=function(){if(typeof Peer==='function'){startPairing()}else{document.getElementById('pairStatus').textContent='Loaded but incompatible: '+url;tryNext()}};
- s.onerror=function(){document.getElementById('pairStatus').textContent='Cannot load '+url;tryNext()};
- document.body.appendChild(s)
+var peerLibraryLoading=false;
+function retryPairing(){
+ if(typeof Peer==='function'){startPairing();return;}
+ loadPeerLibrary();
 }
-tryNext()
-})();
+function loadPeerLibrary(){
+ if(peerLibraryLoading)return;
+ peerLibraryLoading=true;
+ var urls=['./peerjs.compat.js?v=20261024b','https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js'];
+ var i=0;
+ function next(){
+  if(typeof Peer==='function'){peerLibraryLoading=false;startPairing();return;}
+  if(i>=urls.length){peerLibraryLoading=false;document.getElementById('pairId').textContent='Unavailable';document.getElementById('pairStatus').textContent='Library unavailable: local file and backup sources failed';return;}
+  var url=urls[i++],s=document.createElement('script'),finished=false;
+  document.getElementById('pairStatus').textContent='Loading pairing library ('+i+'/3)...';
+  s.src=url;
+  s.onload=function(){if(finished)return;finished=true;clearTimeout(timeout);if(typeof Peer==='function'){peerLibraryLoading=false;startPairing()}else{document.getElementById('pairStatus').textContent='Library loaded but could not run: '+url;next()}};
+  s.onerror=function(){if(finished)return;finished=true;clearTimeout(timeout);document.getElementById('pairStatus').textContent='Library download failed: '+url;next()};
+  var timeout=setTimeout(function(){if(finished)return;finished=true;document.getElementById('pairStatus').textContent='Library timeout: '+url;next()},9000);
+  document.body.appendChild(s);
+ }
+ next();
+}
+loadPeerLibrary();
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
 </body></html>
